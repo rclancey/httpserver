@@ -347,7 +347,7 @@ func DefaultServerConfig() *ServerConfig {
 			SocialLogin: map[string]*SocialLoginConfig{},
 		},
 		CacheDirectory: "var/cache",
-		PidFile: "var/synos.pid",
+		PidFile: "var/server.pid",
 		Bind: BindConfig{
 			Port: 8080,
 			SSL: SSLConfig{

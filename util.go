@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -24,8 +25,12 @@ func sendError(w http.ResponseWriter, req *http.Request, err error) {
 		herr = InternalServerError.Wrap(err, "")
 	}
 	if herr.StatusCode() >= 500 {
-		log := logging.FromContext(req.Context())
-		log.Error(herr.Cause())
+		if req == nil {
+			log.Println(herr.Cause())
+		} else {
+			log := logging.FromContext(req.Context())
+			log.Error(herr.Cause())
+		}
 	}
 	w.WriteHeader(herr.StatusCode())
 	if herr.StatusCode() >= 400 {
@@ -36,7 +41,7 @@ func sendError(w http.ResponseWriter, req *http.Request, err error) {
 func SendJSON(w http.ResponseWriter, obj interface{}) {
 	data, err := json.Marshal(obj)
 	if err != nil {
-		sendError(w, nil, InternalServerError.Wrap(err, "Error serializing data to JSON"))
+		sendError(w, nil, InternalServerError.Wrap(err, fmt.Sprintf("Error serializing data to JSON: %#v", obj)))
 		return
 	}
 	h := w.Header()
