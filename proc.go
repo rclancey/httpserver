@@ -49,6 +49,10 @@ func checkRunningPidfile(fn string) error {
 	if err != nil {
 		return errors.Wrap(err, "can't decode pid " + string(pidData[:n]))
 	}
+	if os.Getpid() == int(pid) {
+		// under docker, this will always start up as the same PID
+		return nil
+	}
 	proc, err := os.FindProcess(int(pid))
 	if err != nil {
 		return errors.Wrapf(err, "can't find process %d", pid)
