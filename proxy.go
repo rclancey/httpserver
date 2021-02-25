@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var fwdRe = regexp.MustCompile(`([\s,;=]+)=([^\s,;=]+|"[^"]*")([;,$])`)
+var fwdRe = regexp.MustCompile(`([^\s,;=]+)=([^\s,;=]+|"[^"]*")([;,]|$)`)
 
 func parseForwarded(h string) [][]string {
 	if h == "" {

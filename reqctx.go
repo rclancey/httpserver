@@ -6,7 +6,7 @@ import (
 
 	//"github.com/gorilla/mux"
 	"github.com/rclancey/logging"
-	"github.com/satori/go.uuid"
+	"github.com/gofrs/uuid/v3"
 )
 
 type reqCtxKey string
