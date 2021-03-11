@@ -151,58 +151,63 @@ func QueryScan(req *http.Request, obj interface{}) error {
 		if !ok {
 			continue
 		}
-		var s string
-		if len(ss) > 0 {
-			s = ss[0]
-		} else {
-			s = ""
+		if len(ss) == 0 {
+			ss = []string{""}
 		}
-		var v reflect.Value
-		ft := rf.Type
-		if ft.Kind() == reflect.Ptr {
-			ft = ft.Elem()
-			pv := reflect.New(ft)
-			rv.Field(i).Set(pv)
-			v = pv.Elem()
-		} else {
-			v = rv.Field(i)
-		}
-		switch ft.Kind() {
-		case reflect.String:
-			v.SetString(s)
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			iv, err := strconv.ParseUint(s, 10, 64)
-			if err != nil {
-				return BadRequest.Wrapf(err, "%s param %s not an unsigned integer", name, s)
-			}
-			v.SetUint(iv)
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			iv, err := strconv.ParseInt(s, 10, 64)
-			if err != nil {
-				return BadRequest.Wrapf(err, "%s param %s not an integer", name, s)
-			}
-			v.SetInt(iv)
-		case reflect.Float32, reflect.Float64:
-			fv, err := strconv.ParseFloat(s, 64)
-			if err != nil {
-				return BadRequest.Wrapf(err, "%s param %s not a number", name, s)
-			}
-			v.SetFloat(fv)
-		case reflect.Bool:
-			bv, err := strconv.ParseBool(s)
-			if err != nil {
-				return BadRequest.Wrapf(err, "%s param %s not a boolean", name, s)
-			}
-			v.SetBool(bv)
-		default:
-			if ft == reflect.TypeOf(time.Time{}) {
-				t, err := time.Parse("2006-01-02T15:04:05MST", s)
-				if err != nil {
-					return BadRequest.Wrapf(err, "%s param %s not a properly formatted time stamp", name, s)
-				}
-				v.Set(reflect.ValueOf(t))
+		for _, s := range ss {
+			var v reflect.Value
+			ft := rf.Type
+			if ft.Kind() == reflect.Ptr {
+				ft = ft.Elem()
+				pv := reflect.New(ft)
+				rv.Field(i).Set(pv)
+				v = pv.Elem()
+			} else if ft.Kind() == reflect.Slice {
+				v = rv.Field(i)
+				sv := reflect.Zero(ft.Elem())
+				v.Set(reflect.Append(v, sv))
+				ft = ft.Elem()
+				v = v.Index(v.Len() - 1)
 			} else {
-				return InternalServerError.Wrapf(nil, "bad url field %s", name)
+				v = rv.Field(i)
+			}
+			switch ft.Kind() {
+			case reflect.String:
+				v.SetString(s)
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				iv, err := strconv.ParseUint(s, 10, 64)
+				if err != nil {
+					return BadRequest.Wrapf(err, "%s param %s not an unsigned integer", name, s)
+				}
+				v.SetUint(iv)
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				iv, err := strconv.ParseInt(s, 10, 64)
+				if err != nil {
+					return BadRequest.Wrapf(err, "%s param %s not an integer", name, s)
+				}
+				v.SetInt(iv)
+			case reflect.Float32, reflect.Float64:
+				fv, err := strconv.ParseFloat(s, 64)
+				if err != nil {
+					return BadRequest.Wrapf(err, "%s param %s not a number", name, s)
+				}
+				v.SetFloat(fv)
+			case reflect.Bool:
+				bv, err := strconv.ParseBool(s)
+				if err != nil {
+					return BadRequest.Wrapf(err, "%s param %s not a boolean", name, s)
+				}
+				v.SetBool(bv)
+			default:
+				if ft == reflect.TypeOf(time.Time{}) {
+					t, err := time.Parse("2006-01-02T15:04:05MST", s)
+					if err != nil {
+						return BadRequest.Wrapf(err, "%s param %s not a properly formatted time stamp", name, s)
+					}
+					v.Set(reflect.ValueOf(t))
+				} else {
+					return InternalServerError.Wrapf(nil, "bad url field %s", name)
+				}
 			}
 		}
 	}
