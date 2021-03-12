@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/danilopolani/gocialite v1.0.2
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/gofrs/uuid/v3 v3.1.2
+	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gorilla/websocket v1.4.2
 	github.com/oleiade/reflections v1.0.1 // indirect
 	github.com/pkg/errors v0.9.1
