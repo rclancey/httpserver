@@ -23,10 +23,11 @@ type HTTPError interface {
 }
 
 type APIError interface {
+	Error() string
 	StatusCode() int
-	SetStatus(int)
-	SetMessage(string)
-	AddContent(string, interface{})
+	SetStatus(int) APIError
+	SetMessage(string) APIError
+	AddContent(string, interface{}) APIError
 	Unwrap() error
 	MarshalJSON() ([]byte, error)
 }
@@ -253,6 +254,9 @@ type apiErr struct {
 }
 
 func NewAPIError(cause error, status int) APIError {
+	if cause == nil {
+		return nil
+	}
 	return &apiErr{
 		cause: cause,
 		status: status,
@@ -261,20 +265,27 @@ func NewAPIError(cause error, status int) APIError {
 	}
 }
 
+func (e *apiErr) Error() string {
+	return e.message
+}
+
 func (e *apiErr) StatusCode() int {
 	return e.status
 }
 
-func (e *apiErr) SetStatus(status int) {
+func (e *apiErr) SetStatus(status int) APIError {
 	e.status = status
+	return e
 }
 
-func (e *apiErr) SetMessage(msg string) {
+func (e *apiErr) SetMessage(msg string) APIError {
 	e.message = msg
+	return e
 }
 
-func (e *apiErr) AddContent(key string, value interface{}) {
+func (e *apiErr) AddContent(key string, value interface{}) APIError {
 	e.data[key] = value
+	return e
 }
 
 func (e *apiErr) Unwrap() error {
@@ -287,6 +298,14 @@ func (e *apiErr) MarshalJSON() ([]byte, error) {
 		"code": e.status,
 		"error": e.message,
 	}
+	stack := []string{}
+	var xerr error
+	xerr = e.cause
+	for xerr != nil {
+		stack = append(stack, xerr.Error())
+		xerr = errors.Unwrap(xerr)
+	}
+	obj["stack"] = stack
 	for k, v := range e.data {
 		obj[k] = v
 	}
