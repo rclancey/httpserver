@@ -20,6 +20,16 @@ import (
 )
 
 func sendError(w http.ResponseWriter, req *http.Request, err error) {
+	aerr, isa := err.(APIError)
+	if isa {
+		data, xerr := json.Marshal(aerr)
+		if xerr == nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(aerr.StatusCode())
+			w.Write(data)
+			return
+		}
+	}
 	herr, isa := err.(HTTPError)
 	if !isa {
 		herr = InternalServerError.Wrap(err, "")
