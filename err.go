@@ -19,6 +19,16 @@ type HTTPError interface {
 	Message() string
 	Wrap(error, string) HTTPError
 	Wrapf(error, string, ...interface{}) HTTPError
+	Unwrap() error
+}
+
+type APIError interface {
+	StatusCode() int
+	SetStatus(int)
+	SetMessage(string)
+	AddContent(string, interface{})
+	Unwrap() error
+	MarshalJSON() ([]byte, error)
 }
 
 type herr struct {
@@ -88,6 +98,10 @@ func (e *herr) Wrapf(err error, format string, args ...interface{}) HTTPError {
 		err: err,
 		message: fmt.Sprintf(format, args...),
 	}
+}
+
+func (e *herr) Unwrap() error {
+	return e.err
 }
 
 func (e *herr) MarshalJSON() ([]byte, error) {
@@ -229,6 +243,54 @@ func (e *methodNotAllowed) Message(w http.ResponseWriter) string {
 		return e.herr.Message()
 	}
 	return fmt.Sprintf("Method %s Not Allowed", e.method)
+}
+
+type apiErr struct {
+	cause error
+	status int
+	message string
+	data map[string]interface{}
+}
+
+func NewAPIError(cause error, status int) APIError {
+	return &apiErr{
+		cause: cause,
+		status: status,
+		message: cause.Error(),
+		data: map[string]interface{}{},
+	}
+}
+
+func (e *apiErr) StatusCode() int {
+	return e.status
+}
+
+func (e *apiErr) SetStatus(status int) {
+	e.status = status
+}
+
+func (e *apiErr) SetMessage(msg string) {
+	e.message = msg
+}
+
+func (e *apiErr) AddContent(key string, value interface{}) {
+	e.data[key] = value
+}
+
+func (e *apiErr) Unwrap() error {
+	return e.cause
+}
+
+func (e *apiErr) MarshalJSON() ([]byte, error) {
+	obj := map[string]interface{}{
+		"status": "error",
+		"code": e.status,
+		"error": e.message,
+	}
+	for k, v := range e.data {
+		obj[k] = v
+	}
+	return json.Marshal(obj)
 }
 
 var OK = newHerr(http.StatusOK, "OK")
