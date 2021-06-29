@@ -79,6 +79,9 @@ func (w *CompressResponseWriter) canCompress() bool {
 	if h.Get("Content-Encoding") != "" {
 		return false
 	}
+	if h.Get("Content-Length") != "" {
+		return false
+	}
 	ct := strings.Split(h.Get("Content-Type"), ";")[0]
 	if strings.HasPrefix(ct, "text/") {
 		return true
