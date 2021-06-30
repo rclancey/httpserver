@@ -83,13 +83,9 @@ func (cfg *AuthConfig) GetTTL() time.Duration {
 	return time.Duration(cfg.TTL) * time.Second
 }
 
-func (cfg *AuthConfig) ReadCookie(req *http.Request) *auth.User {
-	cookie, err := req.Cookie("auth")
-	if err != nil {
-		return nil
-	}
+func (cfg *AuthConfig) readJWT(value string) *auth.User {
 	claims := &jwt.StandardClaims{}
-	token, err := jwt.ParseWithClaims(cookie.Value, claims, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(value, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
@@ -110,6 +106,22 @@ func (cfg *AuthConfig) ReadCookie(req *http.Request) *auth.User {
 		}
 	}
 	return nil
+}
+
+func (cfg *AuthConfig) ReadHeader(req *http.Request, name string) *auth.User {
+	h := req.Header.Get(name)
+	if h == "" {
+		return nil
+	}
+	return cfg.readJWT(h)
+}
+
+func (cfg *AuthConfig) ReadCookie(req *http.Request) *auth.User {
+	cookie, err := req.Cookie("auth")
+	if err != nil {
+		return nil
+	}
+	return cfg.readJWT(cookie.Value)
 }
 
 func (cfg *AuthConfig) SetCookie(w http.ResponseWriter, user *auth.User) {
