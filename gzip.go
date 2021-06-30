@@ -118,11 +118,11 @@ func (w *CompressResponseWriter) writeHeader() (int, error) {
 		if w.statusCode == 0 {
 			w.statusCode = http.StatusOK
 		}
+		if w.cw == nil && w.canCompress() {
+			w.cw = w.compressor()
+		}
 		w.w.WriteHeader(w.statusCode)
 		w.headerWritten = true
-	}
-	if w.canCompress() {
-		w.cw = w.compressor()
 	}
 	if w.buf != nil && len(w.buf) > 0 {
 		return w.write(w.buf)
