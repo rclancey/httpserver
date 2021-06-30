@@ -12,6 +12,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	MinCompressSize = 2048
+)
+
 type compressor interface {
 	io.WriteCloser
 	Flush() error
@@ -21,21 +25,28 @@ func CompressMiddleware(handler http.Handler) http.Handler {
 	f := func(w http.ResponseWriter, r *http.Request) {
 		crw := NewCompressResponseWriter(w, r)
 		handler.ServeHTTP(crw, r)
-		if crw.cw != nil {
-			crw.cw.Close()
-		}
+		crw.Close()
 	}
 	return http.HandlerFunc(f)
 }
 
 type CompressResponseWriter struct {
+	headerWritten bool
+	statusCode int
 	w http.ResponseWriter
+	buf []byte
 	compressor func() compressor
 	cw compressor
 }
 
 func NewCompressResponseWriter(w http.ResponseWriter, r *http.Request) *CompressResponseWriter {
-	crw := &CompressResponseWriter{w: w, cw: nil}
+	crw := &CompressResponseWriter{
+		headerWritten: false,
+		statusCode: 0,
+		w: w,
+		buf: []byte{},
+		cw: nil,
+	}
 	crw.compressor = crw.getCompressor(r)
 	return crw
 }
@@ -52,12 +63,14 @@ func (w *CompressResponseWriter) getCompressor(r *http.Request) func() compresso
 		switch strings.ToLower(strings.TrimSpace(enc)) {
 		case "gzip":
 			return func() compressor {
+				w.Header().Del("Content-Length")
 				w.Header().Set("Content-Encoding", "gzip")
 				w.Header().Add("Vary", "Accept-Encoding")
 				return gzip.NewWriter(w.w)
 			}
 		case "deflate":
 			return func() compressor {
+				w.Header().Del("Content-Length")
 				w.Header().Set("Content-Encoding", "deflate")
 				w.Header().Add("Vary", "Accept-Encoding")
 				cw, err := flate.NewWriter(w.w, flate.DefaultCompression)
@@ -77,9 +90,6 @@ func (w *CompressResponseWriter) canCompress() bool {
 	}
 	h := w.w.Header()
 	if h.Get("Content-Encoding") != "" {
-		return false
-	}
-	if h.Get("Content-Length") != "" {
 		return false
 	}
 	ct := strings.Split(h.Get("Content-Type"), ";")[0]
@@ -103,21 +113,59 @@ func (w *CompressResponseWriter) Header() http.Header {
 	return w.w.Header()
 }
 
-func (w *CompressResponseWriter) WriteHeader(statusCode int) {
-	if statusCode == http.StatusOK && w.canCompress() {
+func (w *CompressResponseWriter) writeHeader() (int, error) {
+	if !w.headerWritten {
+		if w.statusCode == 0 {
+			w.statusCode = http.StatusOK
+		}
+		w.w.WriteHeader(w.statusCode)
+		w.headerWritten = true
+	}
+	if w.canCompress() {
 		w.cw = w.compressor()
 	}
-	w.w.WriteHeader(statusCode)
+	if w.buf != nil && len(w.buf) > 0 {
+		return w.write(w.buf)
+	}
+	return 0, nil
+}
+
+func (w *CompressResponseWriter) WriteHeader(statusCode int) {
+	w.statusCode = statusCode
+	if statusCode != http.StatusOK || !w.canCompress() {
+		w.writeHeader()
+	}
+}
+
+func (w *CompressResponseWriter) write(data []byte) (int, error) {
+	if w.cw == nil {
+		return w.w.Write(data)
+	}
+	return w.cw.Write(data)
 }
 
 func (w *CompressResponseWriter) Write(data []byte) (int, error) {
-	if w.cw != nil {
-		return w.cw.Write(data)
+	if w.headerWritten {
+		return w.write(data)
 	}
-	return w.w.Write(data)
+	if len(w.buf) + len(data) <= MinCompressSize {
+		w.buf = append(w.buf, data...)
+		return len(data), nil
+	}
+	_, err := w.writeHeader()
+	if err != nil {
+		return 0, err
+	}
+	return w.write(data)
 }
 
 func (w *CompressResponseWriter) Close() error {
+	if !w.headerWritten {
+		_, err := w.writeHeader()
+		if err != nil {
+			return err
+		}
+	}
 	if w.cw != nil {
 		err := w.cw.Close()
 		if err != nil {
@@ -132,6 +180,12 @@ func (w *CompressResponseWriter) Close() error {
 }
 
 func (w *CompressResponseWriter) Flush() error {
+	if !w.headerWritten {
+		_, err := w.writeHeader()
+		if err != nil {
+			return err
+		}
+	}
 	if w.cw != nil {
 		err := w.cw.Flush()
 		if err != nil {
