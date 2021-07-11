@@ -103,6 +103,8 @@ func (a *Authenticator) MakeResetPasswordHandler() H.HandlerFunc {
 			return resp, nil
 		}
 		data := &PasswordResetData{
+			Scheme: H.ExternalScheme(r),
+			Hostname: H.ExternalHostname(r),
 			Code: code,
 			Username: user.GetUsername(),
 			Expires: time.Now().Add(a.ResetTTL),

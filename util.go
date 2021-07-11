@@ -245,44 +245,62 @@ func Forwarded(r *http.Request) []map[string]string {
 	return ms
 }
 
-func ExternalURL(r *http.Request) *url.URL {
-	ux := *r.URL
-	u := &ux
-	if u.Scheme == "" {
-		if r.TLS != nil {
-			u.Scheme = "https"
-		} else {
-			u.Scheme = "http"
-		}
-	}
-	if u.Host == "" {
-		u.Host = r.Header.Get("Host")
-		if u.Host == "" {
-			u.Host = r.Host
+func ExternalHostname(r *http.Request) string {
+	host := r.URL.Host
+	if host == "" {
+		host = r.Header.Get("Host")
+		if host == "" {
+			host = r.Host
 		}
 	}
 	fwds := Forwarded(r)
 	if fwds != nil && len(fwds) > 0 {
 		fwd := fwds[len(fwds) - 1]
-		host := fwd["host"]
-		if host != "" {
-			u.Host = host
-		}
-		scheme := strings.ToLower(fwd["proto"])
-		if scheme != "" {
-			u.Scheme = scheme
+		fhost := fwd["host"]
+		if fhost != "" {
+			host = fhost
 		}
 	} else {
-		xfh := r.Header.Get("X-Forwarded-Host")
-		if xfh != "" {
-			parts := strings.Split(xfh, ",")
-			u.Host = strings.TrimSpace(parts[len(parts) - 1])
+		fhost := r.Header.Get("X-Forwarded-Host")
+		if fhost != "" {
+			parts := strings.Split(fhost, ",")
+			host = strings.TrimSpace(parts[len(parts) - 1])
 		}
+	}
+	return host
+}
+
+func ExternalScheme(r *http.Request) string {
+	scheme := r.URL.Scheme
+	if scheme == "" {
+		if r.TLS != nil {
+			scheme = "https"
+		} else {
+			scheme = "http"
+		}
+	}
+	fwds := Forwarded(r)
+	if fwds != nil && len(fwds) > 0 {
+		fwd := fwds[len(fwds) - 1]
+		fscheme := strings.ToLower(fwd["proto"])
+		if fscheme != "" {
+			scheme = fscheme
+		}
+	} else {
 		xfp := r.Header.Get("X-Forwarded-Proto")
 		if xfp != "" {
 			parts := strings.Split(xfp, ",")
-			u.Scheme = strings.TrimSpace(parts[len(parts) - 1])
+			scheme = strings.TrimSpace(parts[len(parts) - 1])
 		}
 	}
+	return scheme
+}
+
+func ExternalURL(r *http.Request) *url.URL {
+	ux := *r.URL
+	u := &ux
+
+	u.Scheme = ExternalScheme(r)
+	u.Host = ExternalHostname(r)
 	return u
 }

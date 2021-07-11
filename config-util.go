@@ -26,7 +26,7 @@ func EnvEval(s string) string {
 	return xs
 }
 
-func makeRootAbs(serverRoot string, fn string) (string, error) {
+func MakeRootAbs(serverRoot string, fn string) (string, error) {
 	fn = EnvEval(fn)
 	if fn == "" {
 		return "", nil

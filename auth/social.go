@@ -31,8 +31,8 @@ func (a *Authenticator) MakeSocialLoginHandlers(router H.Router) {
 			return nil, H.NotFound
 		}
 		authUrl, err := gdriver.Redirect(
-			cfg.GetClientID(),
-			cfg.GetClientSecret(),
+			cfg.ClientID,
+			cfg.ClientSecret,
 			u.String(),
 		)
 		if err != nil {

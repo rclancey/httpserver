@@ -91,6 +91,8 @@ func (a *Authenticator) MakeSend2FACodeHandler() H.HandlerFunc {
 			return resp, nil
 		}
 		data := &TwoFactorData{
+			Scheme: H.ExternalScheme(r),
+			Hostname: H.ExternalHostname(r),
 			Code: code,
 			Username: user.GetUsername(),
 		}
@@ -125,7 +127,11 @@ func (a *Authenticator) MakeInit2FAHandler() H.HandlerFunc {
 		if err != nil {
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
-		uri, recoveryKeys, err := auth.Configure2FA(user.GetUsername(), a.Domain)
+		domain := a.Domain
+		if domain == "" {
+			domain = H.ExternalHostname(r)
+		}
+		uri, recoveryKeys, err := auth.Configure2FA(user.GetUsername(), domain)
 		if err != nil {
 			return nil, err
 		}

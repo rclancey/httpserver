@@ -31,7 +31,7 @@ type SSLConfig struct {
 }
 
 func (cfg *SSLConfig) CheckCert(serverRoot string) error {
-	fn, err := makeRootAbs(serverRoot, cfg.CertFile)
+	fn, err := MakeRootAbs(serverRoot, cfg.CertFile)
 	if err != nil {
 		return errors.Wrap(err, "can't make abs path for cert file " + cfg.CertFile)
 	}
@@ -44,7 +44,7 @@ func (cfg *SSLConfig) CheckCert(serverRoot string) error {
 }
 
 func (cfg *SSLConfig) CheckKey(serverRoot string) error {
-	fn, err := makeRootAbs(serverRoot, cfg.KeyFile)
+	fn, err := MakeRootAbs(serverRoot, cfg.KeyFile)
 	if err != nil {
 		return errors.Wrap(err, "can't make abs path for cert key " + cfg.KeyFile)
 	}
@@ -135,7 +135,7 @@ type LogConfig struct {
 }
 
 func (cfg *LogConfig) Init(serverRoot string) error {
-	dn, err := makeRootAbs(serverRoot, cfg.Directory)
+	dn, err := MakeRootAbs(serverRoot, cfg.Directory)
 	if err != nil {
 		return errors.Wrap(err, "can't make abs log directory " + cfg.Directory)
 	}
@@ -144,12 +144,12 @@ func (cfg *LogConfig) Init(serverRoot string) error {
 		return errors.Wrap(err, "bad log directory")
 	}
 	cfg.Directory = dn
-	fn, err := makeRootAbs(cfg.Directory, cfg.AccessLog)
+	fn, err := MakeRootAbs(cfg.Directory, cfg.AccessLog)
 	if err != nil {
 		return errors.Wrap(err, "can't make abs access log file " + cfg.AccessLog)
 	}
 	cfg.AccessLog = fn
-	fn, err = makeRootAbs(cfg.Directory, cfg.ErrorLog)
+	fn, err = MakeRootAbs(cfg.Directory, cfg.ErrorLog)
 	if err != nil {
 		return errors.Wrap(err, "can't make abs error log file " + cfg.ErrorLog)
 	}
@@ -190,11 +190,10 @@ type ServerConfig struct {
 	PidFile             string         `json:"pidfile"         arg:"--pidfile"`
 	Bind                BindConfig     `json:"bind"            arg:"--bind"`
 	Logging             LogConfig      `json:"log"             arg:"--log"`
-	Auth                AuthConfig     `json:"auth"            arg:"--auth"`
 }
 
 func (cfg *ServerConfig) Abs(fn string) (string, error) {
-	return makeRootAbs(cfg.ServerRoot, fn)
+	return MakeRootAbs(cfg.ServerRoot, fn)
 }
 
 func (cfg *ServerConfig) ReadableFile(fn string) error {
@@ -243,10 +242,6 @@ func (cfg *ServerConfig) Init() error {
 	err = cfg.Logging.Init(cfg.ServerRoot)
 	if err != nil {
 		return errors.Wrap(err, "can't configure logging")
-	}
-	err = cfg.Auth.Init(cfg.ServerRoot)
-	if err != nil {
-		return errors.Wrap(err, "can't configure auth")
 	}
 	return nil
 }
@@ -340,12 +335,6 @@ func DefaultServerConfig() *ServerConfig {
 			RetainCount: 7,
 			LogLevel: logging.INFO,
 		},
-		Auth: AuthConfig{
-			PasswordFile: ".htpasswd",
-			AuthKey: "",
-			TTL: 30 * 24 * 60 * 60,
-			SocialLogin: map[string]*SocialLoginConfig{},
-		},
 		CacheDirectory: "var/cache",
 		PidFile: "var/server.pid",
 		Bind: BindConfig{
@@ -369,7 +358,7 @@ func Configure() (*ServerConfig, error) {
 		return nil, errors.Wrap(err, "can't make abs path for server root " + cfg.ServerRoot)
 	}
 	cfg.ServerRoot = fn
-	fn, err = makeRootAbs(cfg.ServerRoot, cfg.ConfigFile)
+	fn, err = MakeRootAbs(cfg.ServerRoot, cfg.ConfigFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't make abs path for config file " + cfg.ConfigFile)
 	}
