@@ -3,7 +3,7 @@ package auth
 import (
 	"net/http"
 
-	H "github.com/rclancey/httpserver"
+	H "github.com/rclancey/httpserver/v2"
 )
 
 func (a *Authenticator) MakeMiddleware() H.Middleware {

@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	H "github.com/rclancey/httpserver"
+	H "github.com/rclancey/httpserver/v2"
 )
 
 func NewAuthenticator(cfg AuthConfig, serverRoot string) (*Authenticator, error) {

@@ -2,7 +2,7 @@ package auth
 
 import (
 	"net/http"
-	H "github.com/rclancey/httpserver"
+	H "github.com/rclancey/httpserver/v2"
 	"github.com/rclancey/logging"
 )
 

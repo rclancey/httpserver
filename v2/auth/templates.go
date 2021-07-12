@@ -6,7 +6,7 @@ import (
 	"os"
 	texttpl "text/template"
 
-	H "github.com/rclancey/httpserver"
+	H "github.com/rclancey/httpserver/v2"
 )
 
 func readFileText(fn string) (string, error) {

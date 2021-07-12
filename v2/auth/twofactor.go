@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	H "github.com/rclancey/httpserver"
+	H "github.com/rclancey/httpserver/v2"
 	"github.com/rclancey/logging"
 	"github.com/skip2/go-qrcode"
 )

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	H "github.com/rclancey/httpserver"
+	H "github.com/rclancey/httpserver/v2"
 	"github.com/rclancey/logging"
 )
 

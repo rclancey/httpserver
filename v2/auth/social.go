@@ -5,7 +5,7 @@ import (
 	"path"
 
 	"github.com/danilopolani/gocialite"
-	H "github.com/rclancey/httpserver"
+	H "github.com/rclancey/httpserver/v2"
 	"github.com/rclancey/logging"
 )
 
