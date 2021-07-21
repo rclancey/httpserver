@@ -102,6 +102,12 @@ func (a *Authenticator) MakeResetPasswordHandler() H.HandlerFunc {
 			logging.Errorln(r.Context(), "error generating reset code:", err)
 			return resp, nil
 		}
+		if auth.IsDirty() {
+			err = user.SetAuth(auth)
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+		}
 		data := &PasswordResetData{
 			Scheme: H.ExternalScheme(r),
 			Hostname: H.ExternalHostname(r),
