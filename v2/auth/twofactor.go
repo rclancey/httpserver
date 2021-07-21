@@ -161,40 +161,51 @@ func (a *Authenticator) MakeComplete2FAHandler() H.HandlerFunc {
 		src := a.UserSource
 		claims, err := j.GetClaimsFromRequest(r)
 		if err != nil {
+			log.Println("error getting claims:", err)
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
 		if claims == nil {
+			log.Println("no claims")
 			return nil, H.Unauthorized
 		}
 		if !claims.TwoFactor {
+			log.Println("claims requires 2fa")
 			return nil, H.Unauthorized
 		}
 		user, err := src.GetUser(claims.GetUsername())
 		if err != nil {
+			log.Println("no user", err)
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
 		auth, err := user.GetAuth()
 		if err != nil {
+			log.Println("no auth", err)
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
 		params := &LoginParams{}
 		err = H.ReadJSON(r, params)
 		if err != nil {
+			log.Println("bad json", err)
 			return nil, err
 		}
 		if params.TwoFactor == nil {
+			log.Println("no two factor code")
 			return nil, H.BadRequest
 		}
 		err = auth.Complete2FA(*params.TwoFactor)
 		if err != nil {
+			log.Println("can't complete:", err)
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
 		if auth.IsDirty() {
 			err = user.SetAuth(auth)
 			if err != nil {
+				log.Println("can't save:", err)
 				return nil, err
 			}
+			log.Println("saved")
 		}
+		log.Println("ok")
 		return map[string]string{"status": "OK"}, nil
 	}
 	return H.HandlerFunc(fnc)
