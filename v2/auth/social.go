@@ -38,7 +38,7 @@ func (a *Authenticator) MakeSocialLoginHandlers(router H.Router) {
 		if err != nil {
 			return nil, H.NotFound.Wrap(err, "")
 		}
-		return nil, H.Found.To(authUrl)
+		return H.Redirect(authUrl), nil
 	}
 	callback := func(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 		j := a.JWT
@@ -103,7 +103,7 @@ func (a *Authenticator) MakeSocialLoginHandlers(router H.Router) {
 		if err != nil {
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
-		return nil, H.Found.To("/")
+		return H.Redirect("/"), nil
 	}
 	router.GET("/:driver", H.HandlerFunc(redirect))
 	router.GET("/:driver/callback", H.HandlerFunc(callback))
