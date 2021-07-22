@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"path"
@@ -61,7 +62,7 @@ func (a *Authenticator) MakeSocialLoginHandlers(router H.Router) {
 		socialSrc, ok := src.(SocialUserSource)
 		if ok {
 			user, err = socialSrc.GetSocialUser(driver, suser.ID, suser.Username)
-			if err != nil {
+			if err != nil && !errors.Is(err, ErrUnknownUser) {
 				log.Printf("error getting social user for %s/%s: %s", suser.ID, suser.Username, err)
 				return nil, H.Unauthorized.Wrap(err, "")
 			}
