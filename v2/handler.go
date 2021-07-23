@@ -63,7 +63,9 @@ func (h HandlerFunc) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		case ProxyURL:
 			Proxy(w, req, string(tobj))
 		case Redirect:
+			log.Println("redirect to", string(tobj))
 			http.Redirect(w, req, string(tobj), http.StatusFound)
+			log.Println("redirect complete")
 		case StaticFile:
 			f, err := os.Open(string(tobj))
 			if err == nil {
