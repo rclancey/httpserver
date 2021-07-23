@@ -55,19 +55,15 @@ type HandlerFunc func(w http.ResponseWriter, req *http.Request) (interface{}, er
 func (h HandlerFunc) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	obj, err := h(w, req)
 	if err != nil {
-		log.Println("error in handler:", err)
 		sendError(w, req, err)
 		return
 	}
 	if obj != nil {
-		log.Printf("generating response for %T", obj)
 		switch tobj := obj.(type) {
 		case ProxyURL:
 			Proxy(w, req, string(tobj))
 		case Redirect:
-			log.Println("redirect to", string(tobj))
 			http.Redirect(w, req, string(tobj), http.StatusFound)
-			log.Println("redirect complete")
 		case StaticFile:
 			f, err := os.Open(string(tobj))
 			if err == nil {
