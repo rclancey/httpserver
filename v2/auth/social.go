@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+	"log"
 	"net/http"
 	"path"
 
@@ -45,6 +47,7 @@ func (a *Authenticator) MakeSocialLoginHandlers(router H.Router) {
 		src := a.UserSource
 		driver := H.ContextRequestVars(r.Context())["driver"]
 		if driver == "" {
+			log.Println("driver route not found")
 			return nil, H.NotFound
 		}
 		q := r.URL.Query()
@@ -52,19 +55,22 @@ func (a *Authenticator) MakeSocialLoginHandlers(router H.Router) {
 		state := q.Get("state")
 		suser, _, err := dispatcher.Handle(state, code)
 		if err != nil {
+			log.Println("dispatcher error:", code, state, suser, err)
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
 		var user AuthUser
 		socialSrc, ok := src.(SocialUserSource)
 		if ok {
 			user, err = socialSrc.GetSocialUser(driver, suser.ID, suser.Username)
-			if err != nil {
+			if err != nil && !errors.Is(err, ErrUnknownUser) {
+				log.Printf("error getting social user for %s/%s: %s", suser.ID, suser.Username, err)
 				return nil, H.Unauthorized.Wrap(err, "")
 			}
 		}
 		if user == nil && suser.Email != "" {
 			user, err = src.GetUserByEmail(suser.Email)
 			if err != nil {
+				log.Printf("error getting social user by email %s: %s", suser.Email, err)
 				return nil, H.Unauthorized.Wrap(err, "")
 			}
 			if user != nil {
@@ -86,21 +92,24 @@ func (a *Authenticator) MakeSocialLoginHandlers(router H.Router) {
 			}
 		}
 		if user == nil {
+			log.Println("no user for social user", suser)
 			return nil, H.Unauthorized
 		}
 		auth, err := user.GetAuth()
 		if err != nil {
+			log.Println("error getting auth:", err)
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
 		claims := j.NewClaims()
 		claims.SetUser(user)
-		claims.Extra = suser.Raw
+		//claims.Extra = suser.Raw
 		j.SetCookie(w, claims)
 		if !auth.Has2FA() {
 			claims.TwoFactor = true
 		}
 		err = j.SetCookie(w, claims)
 		if err != nil {
+			log.Println("error setting cookie:", err)
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
 		return H.Redirect("/"), nil
