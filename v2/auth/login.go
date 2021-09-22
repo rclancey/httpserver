@@ -28,14 +28,15 @@ func (a *Authenticator) MakeLoginHandler() H.HandlerFunc {
 			logging.Errorf(r.Context(), "error getting user auth info: %s", err.Error())
 			return nil, H.Unauthorized
 		}
-		err = auth.CheckPassword(*params.Password)
+		err = auth.Authenticate(*params.Password)
 		if err != nil {
 			logging.Errorf(r.Context(), "error checking user password: %s", err.Error())
 			return nil, H.Unauthorized
 		}
 		claims := j.NewClaims()
 		claims.SetUser(user)
-		if !auth.Has2FA() {
+		has2fa := Has2FA(user)
+		if !has2fa {
 			claims.TwoFactor = true
 		}
 		token, err := j.MakeToken(claims)
@@ -50,7 +51,7 @@ func (a *Authenticator) MakeLoginHandler() H.HandlerFunc {
 			Username: *params.Username,
 			Claims: claims,
 			Token: token,
-			Needs2FA: auth.Has2FA(),
+			Needs2FA: has2fa,
 		}, nil
 	}
 	return H.HandlerFunc(fnc)

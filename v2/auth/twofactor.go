@@ -1,12 +1,11 @@
 package auth
 
 import (
-	"encoding/base64"
 	"net/http"
 
+	"github.com/rclancey/authenticator"
 	H "github.com/rclancey/httpserver/v2"
 	"github.com/rclancey/logging"
-	"github.com/skip2/go-qrcode"
 )
 
 func (a *Authenticator) MakeLogin2FAHandler() H.HandlerFunc {
@@ -32,16 +31,27 @@ func (a *Authenticator) MakeLogin2FAHandler() H.HandlerFunc {
 		if err != nil {
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
-		auth, err := user.GetAuth()
+		tfuser, isa := user.(TwoFactorUser)
+		if !isa {
+			return nil, H.Unauthorized
+		}
+		auth, err := tfuser.GetTwoFactorAuth()
 		if err != nil {
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
-		err = auth.Check2FA(*params.TwoFactor)
+		if auth == nil {
+			return nil, H.Unauthorized
+		}
+		tfa, isa := auth.(TwoFactorAuth)
+		if !isa {
+			return nil, H.Unauthorized
+		}
+		err = tfa.Authenticate(*params.TwoFactor)
 		if err != nil {
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
-		if auth.IsDirty() {
-			err = user.SetAuth(auth)
+		if tfa.IsDirty() {
+			err = tfuser.SetTwoFactorAuth(tfa)
 			if err != nil {
 				return nil, H.Unauthorized.Wrap(err, "")
 			}
@@ -60,7 +70,7 @@ func (a *Authenticator) MakeLogin2FAHandler() H.HandlerFunc {
 			Username: claims.GetUsername(),
 			Claims: claims,
 			Token: token,
-			Needs2FA: auth.Has2FA(),
+			Needs2FA: true,
 		}, nil
 	}
 	return H.HandlerFunc(fnc)
@@ -81,12 +91,23 @@ func (a *Authenticator) MakeSend2FACodeHandler() H.HandlerFunc {
 		if err != nil {
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
-		auth, err := user.GetAuth()
+		tfuser, isa := user.(TwoFactorUser)
+		if !isa {
+			return nil, H.Unauthorized
+		}
+		auth, err := tfuser.GetTwoFactorAuth()
 		if err != nil {
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
+		if auth == nil {
+			return nil, H.Unauthorized
+		}
+		tfa, isa := auth.(TwoFactorAuth)
+		if !isa {
+			return nil, H.Unauthorized
+		}
 		resp := map[string]string{"status": "OK"}
-		code := auth.Get2FACode()
+		code := tfa.GenCode()
 		if code == "" {
 			return resp, nil
 		}
@@ -123,34 +144,25 @@ func (a *Authenticator) MakeInit2FAHandler() H.HandlerFunc {
 		if err != nil {
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
-		auth, err := user.GetAuth()
+		tfuser, isa := user.(TwoFactorUser)
+		if !isa {
+			return nil, H.Unauthorized
+		}
+		auth, err := tfuser.InitTwoFactorAuth()
 		if err != nil {
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
-		domain := a.Domain
-		if domain == "" {
-			domain = H.ExternalHostname(r)
+		tfa, isa := auth.(*authenticator.TwoFactorAuthenticator)
+		if !isa {
+			return nil, H.Unauthorized.Wrap(err, "")
 		}
-		uri, recoveryKeys, err := auth.Configure2FA(user.GetUsername(), domain)
-		if err != nil {
-			return nil, err
+		if tfa.Domain == "" {
+			tfa.Domain = H.ExternalHostname(r)
 		}
-		pngdata, err := qrcode.Encode(uri, qrcode.Medium, 256)
-		if err != nil {
-			return nil, err
+		if tfa.Username == "" {
+			tfa.Username = user.GetUsername()
 		}
-		b64data := base64.StdEncoding.EncodeToString(pngdata)
-		if auth.IsDirty() {
-			err = user.SetAuth(auth)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return &Init2FAResponse{
-			URI: uri,
-			RecoveryKeys: recoveryKeys,
-			QRCode: "data:image/png;base64," + b64data,
-		}, nil
+		return tfa.Configure()
 	}
 	return H.HandlerFunc(fnc)
 }
@@ -173,9 +185,9 @@ func (a *Authenticator) MakeComplete2FAHandler() H.HandlerFunc {
 		if err != nil {
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
-		auth, err := user.GetAuth()
-		if err != nil {
-			return nil, H.Unauthorized.Wrap(err, "")
+		tfuser, isa := user.(TwoFactorUser)
+		if !isa {
+			return nil, H.Unauthorized
 		}
 		params := &LoginParams{}
 		err = H.ReadJSON(r, params)
@@ -185,15 +197,9 @@ func (a *Authenticator) MakeComplete2FAHandler() H.HandlerFunc {
 		if params.TwoFactor == nil {
 			return nil, H.BadRequest
 		}
-		err = auth.Complete2FA(*params.TwoFactor)
+		err = tfuser.CompleteTwoFactorAuth(*params.TwoFactor)
 		if err != nil {
 			return nil, H.Unauthorized.Wrap(err, "")
-		}
-		if auth.IsDirty() {
-			err = user.SetAuth(auth)
-			if err != nil {
-				return nil, err
-			}
 		}
 		return map[string]string{"status": "OK"}, nil
 	}

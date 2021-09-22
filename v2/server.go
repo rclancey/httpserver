@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"sync"
 
 	//"github.com/gorilla/mux"
 	//"github.com/julienschmidt/httprouter"
@@ -21,6 +22,7 @@ type Server struct {
 	router Router
 	docroot http.Handler
 	middlewares []Middleware
+	servers []*http.Server
 }
 
 func NewServer(cfg *ServerConfig) (*Server, error) {
@@ -34,6 +36,7 @@ func NewServer(cfg *ServerConfig) (*Server, error) {
 		router: router,
 		docroot: nil,
 		middlewares: []Middleware{},
+		servers: nil,
 	}
 	srv.docroot = http.FileServer(http.Dir(srv.cfg.DocumentRoot))
 	if srv.cfg.DefaultProxy != "" {
@@ -163,6 +166,11 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *Server) ListenAndServe() error {
+	if srv.servers != nil {
+		return errors.New("server already running")
+	}
+	servers := make([]*http.Server, 2)
+	srv.servers = servers
 	err := ValidateRouter(srv.router)
 	if err != nil {
 		return err
@@ -186,45 +194,100 @@ func (srv *Server) ListenAndServe() error {
 		return errors.Wrap(err, "can't write pid file")
 	}
 	defer removePidfile(srv.cfg)
-	errch := make(chan error, 2)
-	listeners := 0
+	wg := &sync.WaitGroup{}
+	errch := make(chan error, 10)
 	if srv.cfg.Bind.SSL.Enabled() {
-		listeners += 1
+		cfg := srv.cfg.Bind.SSL
+		addr := fmt.Sprintf(":%d", cfg.Port)
+		server := &http.Server{
+			Addr: addr,
+			Handler: srv,
+		}
+		servers[0] = server
+		wg.Add(1)
 		go func() {
-			cfg := srv.cfg.Bind.SSL
-			addr := fmt.Sprintf(":%d", cfg.Port)
 			if l == nil {
-				log.Println("listening for https on", addr)
+				log.Println("listening for https on", server.Addr)
 			} else {
-				l.Infoln("listening for https on", addr)
+				l.Infoln("listening for https on", server.Addr)
 			}
-			err := http.ListenAndServeTLS(addr, cfg.CertFile, cfg.KeyFile, srv)
-			errch <- err
+			err := server.ListenAndServeTLS(cfg.CertFile, cfg.KeyFile)
+			servers[0] = nil
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				errch <- err
+			}
+			wg.Done()
 		}()
 	}
 	if srv.cfg.Bind.Port != 0 {
-		listeners += 1
+		addr := fmt.Sprintf(":%d", srv.cfg.Bind.Port)
+		server := &http.Server{
+			Addr: addr,
+			Handler: srv,
+		}
+		servers[1] = server
+		wg.Add(1)
 		go func() {
-			addr := fmt.Sprintf(":%d", srv.cfg.Bind.Port)
 			if l == nil {
 				log.Println("listening for http on", addr)
 			} else {
 				l.Infoln("listening for http on", addr)
 			}
-			err := http.ListenAndServe(addr, srv)
-			errch <- err
+			err := server.ListenAndServe()
+			servers[1] = nil
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				errch <- err
+			}
+			wg.Done()
 		}()
 	}
-	for listeners > 0 {
-		err := <-errch
-		listeners -= 1
-		if err != nil {
-			if l == nil {
-				log.Fatal(err)
-			} else {
-				l.Fatal(err)
-			}
+	wg.Wait()
+	close(errch)
+	for {
+		err, ok := <-errch
+		if !ok {
+			break
+		}
+		if l == nil {
+			log.Println(err)
+		} else {
+			l.Error(err)
 		}
 	}
 	return nil
+}
+
+func (srv *Server) RegisterWebSocketHub(hub Hub) {
+	servers := srv.servers
+	if servers == nil {
+		return
+	}
+	for _, server := range srv.servers {
+		if server == nil {
+			continue
+		}
+		server.RegisterOnShutdown(func() {
+			hub.Stop()
+		})
+	}
+}
+
+func (srv *Server) Shutdown() error {
+	servers := srv.servers
+	if servers == nil {
+		return nil
+	}
+	var hadErr error
+	for i, server := range srv.servers {
+		if server == nil {
+			continue
+		}
+		err := server.Shutdown(context.Background())
+		if err == nil {
+			srv.servers[i] = nil
+		} else {
+			hadErr = err
+		}
+	}
+	return hadErr
 }
