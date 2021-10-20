@@ -8,7 +8,7 @@ import (
 	H "github.com/rclancey/httpserver/v2"
 )
 
-func NewAuthenticator(cfg AuthConfig, serverRoot string) (*Authenticator, error) {
+func NewAuthenticator(cfg AuthConfig, src UserSource) (*Authenticator, error) {
 	keyBytes, err := hex.DecodeString(cfg.AuthKey)
 	if err != nil {
 		return nil, err
@@ -20,15 +20,16 @@ func NewAuthenticator(cfg AuthConfig, serverRoot string) (*Authenticator, error)
 		keyBytes = append(keyBytes, pad...)
 	}
 	j := NewJWT(keyBytes[:16], time.Duration(cfg.TTL) * time.Second, cfg.Issuer, cfg.Cookie, cfg.Header)
-	resetText, resetHtml, resetSms, err := cfg.ResetTemplate.GetTemplates(serverRoot)
+	resetText, resetHtml, resetSms, err := cfg.ResetTemplate.GetTemplates()
 	if err != nil {
 		return nil, err
 	}
-	twoFactorText, twoFactorHtml, twoFactorSms, err := cfg.TwoFactorTemplate.GetTemplates(serverRoot)
+	twoFactorText, twoFactorHtml, twoFactorSms, err := cfg.TwoFactorTemplate.GetTemplates()
 	if err != nil {
 		return nil, err
 	}
 	return &Authenticator{
+		UserSource:            src,
 		JWT:                   j,
 		SocialConfig:          cfg.SocialLogin,
 		EmailSender:           cfg.EmailSender,

@@ -291,3 +291,13 @@ func (srv *Server) Shutdown() error {
 	}
 	return hadErr
 }
+
+func (srv *Server) RegisterOnShutdown(f func()) {
+	servers := srv.servers
+	for _, server := range servers {
+		if server == nil {
+			continue
+		}
+		server.RegisterOnShutdown(f)
+	}
+}
