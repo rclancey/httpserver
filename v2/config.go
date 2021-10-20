@@ -83,6 +83,9 @@ func (cfg *BindConfig) Init(serverRoot string) error {
 	if err != nil {
 		return errors.Wrap(err, "can't configure SSL")
 	}
+	if cfg.ExternalHostname == "" {
+		cfg.ExternalHostname, _ = os.Hostname()
+	}
 	return nil
 }
 
