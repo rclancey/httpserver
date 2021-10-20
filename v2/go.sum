@@ -135,6 +135,8 @@ github.com/rclancey/argparse v1.0.1 h1:SjktOLAtpBo2DyjRYK9cr9OfLZHt2SeDLGg/U6A/B
 github.com/rclancey/argparse v1.0.1/go.mod h1:kluYI/PjlIKtMyDmuGK6h8kEHjm5XfDG4+N5r5byqEQ=
 github.com/rclancey/authenticator v0.0.1 h1:eWEj7if0q4+SRTjYVTtNMW8sRL+WDpIMM1OALj3UrLM=
 github.com/rclancey/authenticator v0.0.1/go.mod h1:gy07poZ9xtcIN2Ngy1Sx80fnfQsOSFv2nN+0Bj92aZw=
+github.com/rclancey/authenticator v0.0.2 h1:wueE9Q310QVAOBe6rg5C0hsabB+sklQ5rUak0fmDd4o=
+github.com/rclancey/authenticator v0.0.2/go.mod h1:gy07poZ9xtcIN2Ngy1Sx80fnfQsOSFv2nN+0Bj92aZw=
 github.com/rclancey/logging v1.0.1 h1:/1Kup0FR0dgVUo0XBZnMGdj4E05h7l3DW8F2n/7GH1g=
 github.com/rclancey/logging v1.0.1/go.mod h1:7JMMy3uqgWVU7jG+qMT5BDSxi6Xh3EiQOpom4ewvbVM=
 github.com/rclancey/logrotate v1.0.1 h1:d/sslOTxJA9hQRfWlKYCPUAOEJxVoD8pwsB4WLsIb9s=
