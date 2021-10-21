@@ -4,8 +4,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gofrs/uuid"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/rclancey/authenticator"
 )
 
