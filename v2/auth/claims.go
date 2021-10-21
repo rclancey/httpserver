@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gofrs/uuid"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 func NewStandardClaims(issuer string, dur time.Duration) *StandardClaims {

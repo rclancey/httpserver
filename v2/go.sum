@@ -46,8 +46,6 @@ github.com/danilopolani/gocialite v1.0.2 h1:VPyzljBB17rcxe+ARNCyID9Yb9NpvIDc8git
 github.com/danilopolani/gocialite v1.0.2/go.mod h1:WyErrpglkCWi4+RGPZzBLjD0fK/M7Yo757lVTr6C8HA=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
-github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgryski/dgoogauth v0.0.0-20190221195224-5a805980a5f3 h1:AqeKSZIG/NIC75MNQlPy/LM3LxfpLwahICJBHwSMFNc=
 github.com/dgryski/dgoogauth v0.0.0-20190221195224-5a805980a5f3/go.mod h1:hEfFauPHz7+NnjR/yHJGhrKo1Za+zStgwUETx3yzqgY=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
@@ -61,6 +59,8 @@ github.com/gofrs/uuid v3.2.0+incompatible h1:y12jRkkFxsd7GpqdSZ+/KCs/fJbqpEXSGd4
 github.com/gofrs/uuid v3.2.0+incompatible/go.mod h1:b2aQJv3Z4Fp6yNu3cdSllBxTCLRxnplIgP/c0N/04lM=
 github.com/gofrs/uuid/v3 v3.1.2 h1:V3IBv1oU82x6YIr5txe3azVHgmOKYdyKQTowm9moBlY=
 github.com/gofrs/uuid/v3 v3.1.2/go.mod h1:xPwMqoocQ1L5G6pXX5BcE7N5jlzn2o19oqAKxwZW/kI=
+github.com/golang-jwt/jwt/v4 v4.1.0 h1:XUgk2Ex5veyVFVeLm0xhusUTQybEbexJXrvPNOKkSY0=
+github.com/golang-jwt/jwt/v4 v4.1.0/go.mod h1:/xlHOz8bRuivTWchD4jCa+NbatV+wEUSzwAxVc6locg=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
 github.com/golang/groupcache v0.0.0-20191227052852-215e87163ea7/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
@@ -133,8 +133,6 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/rclancey/argparse v1.0.1 h1:SjktOLAtpBo2DyjRYK9cr9OfLZHt2SeDLGg/U6A/BK8=
 github.com/rclancey/argparse v1.0.1/go.mod h1:kluYI/PjlIKtMyDmuGK6h8kEHjm5XfDG4+N5r5byqEQ=
-github.com/rclancey/authenticator v0.0.1 h1:eWEj7if0q4+SRTjYVTtNMW8sRL+WDpIMM1OALj3UrLM=
-github.com/rclancey/authenticator v0.0.1/go.mod h1:gy07poZ9xtcIN2Ngy1Sx80fnfQsOSFv2nN+0Bj92aZw=
 github.com/rclancey/authenticator v0.0.2 h1:wueE9Q310QVAOBe6rg5C0hsabB+sklQ5rUak0fmDd4o=
 github.com/rclancey/authenticator v0.0.2/go.mod h1:gy07poZ9xtcIN2Ngy1Sx80fnfQsOSFv2nN+0Bj92aZw=
 github.com/rclancey/logging v1.0.1 h1:/1Kup0FR0dgVUo0XBZnMGdj4E05h7l3DW8F2n/7GH1g=
