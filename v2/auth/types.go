@@ -6,7 +6,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofrs/uuid"
-	"github.com/rclancey/twofactor"
+	"github.com/rclancey/authenticator"
 )
 
 type User interface {
@@ -61,8 +61,31 @@ type AvatarUser interface {
 
 type AuthUser interface {
 	User
-	GetAuth() (*twofactor.Auth, error)
-	SetAuth(*twofactor.Auth) error
+	GetAuth() (authenticator.Authenticator, error)
+	SetAuth(authenticator.Authenticator) error
+}
+
+type PasswordAuth interface {
+	authenticator.Authenticator
+	SetPassword(password string, inputs ...string) error
+	ResetPassword(dur time.Duration) (string, error)
+	CheckResetCode(code string) error
+	IsDirty() bool
+}
+
+type TwoFactorUser interface {
+	AuthUser
+	GetTwoFactorAuth() (authenticator.Authenticator, error)
+	SetTwoFactorAuth(authenticator.Authenticator) error
+	InitTwoFactorAuth() (authenticator.Authenticator, error)
+	CompleteTwoFactorAuth(code string) error
+}
+
+type TwoFactorAuth interface {
+	authenticator.Authenticator
+	GenCode() string
+	Configure() (*authenticator.TwoFactorConfig, error)
+	IsDirty() bool
 }
 
 type SocialUser interface {

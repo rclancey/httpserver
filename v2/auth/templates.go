@@ -5,8 +5,6 @@ import (
 	htmltpl "html/template"
 	"os"
 	texttpl "text/template"
-
-	H "github.com/rclancey/httpserver/v2"
 )
 
 func readFileText(fn string) (string, error) {
@@ -38,38 +36,24 @@ func makeHtmlTemplateFromFile(name, fn string) (Template, error) {
 	return htmltpl.New(name).Parse(text)
 }
 
-func (cfg *TemplateConfig) GetTemplates(serverRoot string) (text, html, sms Template, err error) {
-	var fn string
+func (cfg *TemplateConfig) GetTemplates() (text, html, sms Template, err error) {
 	if cfg.Text != "" {
-		fn, err = H.MakeRootAbs(serverRoot, cfg.Text)
-		if err != nil {
-			return
-		}
-		text, err = makeTextTemplateFromFile("text", fn)
+		text, err = makeTextTemplateFromFile("text", cfg.Text)
 		if err != nil {
 			return
 		}
 	}
 	if cfg.HTML != "" {
-		fn, err = H.MakeRootAbs(serverRoot, cfg.HTML)
-		if err != nil {
-			return
-		}
-		html, err = makeHtmlTemplateFromFile("html", fn)
+		html, err = makeHtmlTemplateFromFile("html", cfg.HTML)
 		if err != nil {
 			return
 		}
 	}
 	if cfg.SMS != "" {
-		fn, err = H.MakeRootAbs(serverRoot, cfg.SMS)
-		if err != nil {
-			return
-		}
-		sms, err = makeTextTemplateFromFile("sms", fn)
+		sms, err = makeTextTemplateFromFile("sms", cfg.SMS)
 		if err != nil {
 			return
 		}
 	}
 	return
 }
-

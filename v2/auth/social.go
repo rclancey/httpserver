@@ -95,16 +95,11 @@ func (a *Authenticator) MakeSocialLoginHandlers(router H.Router) {
 			log.Println("no user for social user", suser)
 			return nil, H.Unauthorized
 		}
-		auth, err := user.GetAuth()
-		if err != nil {
-			log.Println("error getting auth:", err)
-			return nil, H.Unauthorized.Wrap(err, "")
-		}
 		claims := j.NewClaims()
 		claims.SetUser(user)
 		//claims.Extra = suser.Raw
 		j.SetCookie(w, claims)
-		if !auth.Has2FA() {
+		if !Has2FA(user) {
 			claims.TwoFactor = true
 		}
 		err = j.SetCookie(w, claims)

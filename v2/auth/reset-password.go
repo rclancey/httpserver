@@ -45,25 +45,29 @@ func (a *Authenticator) MakeChangePasswordHandler() H.HandlerFunc {
 		if err != nil {
 			return nil, H.Unauthorized.Wrap(err, "")
 		}
+		pwauth, isa := auth.(PasswordAuth)
+		if !isa {
+			return nil, H.Unauthorized
+		}
 		if params.ResetCode == nil {
 			if claims == nil || !claims.TwoFactor || params.Password == nil {
 				return nil, H.Unauthorized
 			}
-			err = auth.CheckPassword(*params.Password)
+			err = auth.Authenticate(*params.Password)
 			if err != nil {
 				return nil, H.Unauthorized.Wrap(err, "")
 			}
 		} else {
-			err = auth.CheckResetCode(*params.ResetCode)
+			err = auth.Authenticate(*params.ResetCode)
 			if err != nil {
 				return nil, H.Unauthorized.Wrap(err, "")
 			}
 		}
-		err = auth.SetPassword(*params.NewPassword)
+		err = pwauth.SetPassword(*params.NewPassword)
 		if err != nil {
 			return nil, H.BadRequest.Wrap(err, "")
 		}
-		if auth.IsDirty() {
+		if pwauth.IsDirty() {
 			err = user.SetAuth(auth)
 			if err != nil {
 				return nil, errors.WithStack(err)
@@ -97,12 +101,16 @@ func (a *Authenticator) MakeResetPasswordHandler() H.HandlerFunc {
 			logging.Errorln(r.Context(), "error getting user auth:", err)
 			return resp, nil
 		}
-		code, err := auth.ResetPassword(a.ResetTTL)
+		pwauth, isa := auth.(PasswordAuth)
+		if !isa {
+			return resp, nil
+		}
+		code, err := pwauth.ResetPassword(a.ResetTTL)
 		if err != nil {
 			logging.Errorln(r.Context(), "error generating reset code:", err)
 			return resp, nil
 		}
-		if auth.IsDirty() {
+		if pwauth.IsDirty() {
 			err = user.SetAuth(auth)
 			if err != nil {
 				return nil, errors.WithStack(err)
