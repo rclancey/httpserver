@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -147,6 +148,7 @@ type Client struct {
 	hub Hub
 	conn *websocket.Conn
 	Send chan []byte
+	lock *sync.Mutex
 	isOpen bool
 }
 
@@ -158,6 +160,8 @@ func (c *Client) Open(conn *websocket.Conn) error {
 }
 
 func (c *Client) Close() {
+	c.lock.Lock()
+	defer c.lock.Unlock()
 	isOpen := c.isOpen
 	c.isOpen = false
 	hub := c.hub
@@ -220,9 +224,10 @@ func (c *Client) NextWriter(messageType int) (io.WriteCloser, error) {
 }
 
 func (c *Client) WriteMessage(messageType int, data []byte) error {
-	conn := c.conn
-	if conn != nil && c.isOpen {
-		return conn.WriteMessage(messageType, data)
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	if c.conn != nil && c.isOpen {
+		return c.conn.WriteMessage(messageType, data)
 	}
 	return errors.New("can't write to closed websocket")
 }
@@ -298,7 +303,7 @@ func (c *Client) WritePump() {
 }
 
 func ServeWS(hub Hub, w http.ResponseWriter, req *http.Request) (interface{}, error) {
-	client := &Client{hub: hub, Send: make(chan []byte, 256)}
+	client := &Client{hub: hub, Send: make(chan []byte, 256), lock: &sync.Mutex{}}
 	return client, nil
 }
 
