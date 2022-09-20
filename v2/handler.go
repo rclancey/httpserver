@@ -111,7 +111,7 @@ func (h HandlerFunc) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		case *ObjectStream:
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			tobj.Stream(w)
+			tobj.stream(w)
 		default:
 			var modTime time.Time
 			var etag string

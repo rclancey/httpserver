@@ -34,7 +34,7 @@ func (s *ObjectStreamSuite) TestStream(c *C) {
 		stream.Close()
 	}()
 	buf := bytes.NewBuffer(nil)
-	err := stream.Stream(buf)
+	err := stream.stream(buf)
 	c.Check(err, IsNil)
 	exp := `{"foo":"bar","baz":["a","b"],"test":[{"n":0,"t":1},{"n":1,"t":2},{"n":2,"t":3},{"n":3,"t":4},{"n":4,"t":5},{"n":5,"t":6},{"n":6,"t":7},{"n":7,"t":8},{"n":8,"t":9},{"n":9,"t":10}],"status":"ok","count":10}`
 	c.Check(string(buf.Bytes()), Equals, exp)

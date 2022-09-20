@@ -45,6 +45,8 @@ func NewObjectStream(key string) *ObjectStream {
 	}
 }
 
+// Send should be called from a goroutine after returning the ObjectStream
+// from the handler
 func (stream *ObjectStream) Send(obj interface{}) error {
 	if stream.closed {
 		return ErrClosed
@@ -53,6 +55,8 @@ func (stream *ObjectStream) Send(obj interface{}) error {
 	return nil
 }
 
+// SetHeader() should be called before returning the ObjectStream from the
+// handler, rather than in a goroutine
 func (stream *ObjectStream) SetHeader(key string, val interface{}) error {
 	stream.mutex.Lock()
 	defer stream.mutex.Unlock()
@@ -64,6 +68,7 @@ func (stream *ObjectStream) SetHeader(key string, val interface{}) error {
 	return nil
 }
 
+// SetFooter() must be called before Close()
 func (stream *ObjectStream) SetFooter(key string, val interface{}) error {
 	stream.mutex.Lock()
 	defer stream.mutex.Unlock()
@@ -78,6 +83,8 @@ func (stream *ObjectStream) SetFooter(key string, val interface{}) error {
 	return nil
 }
 
+// Close() must be called at the end of the goroutine in order flush the
+// stream to the client
 func (stream *ObjectStream) Close() error {
 	stream.mutex.Lock()
 	defer stream.mutex.Unlock()
@@ -113,7 +120,7 @@ func (stream *ObjectStream) writeKeyValue(w io.Writer, key string, val interface
 	return nil
 }
 
-func (stream *ObjectStream) WriteHeader(w io.Writer) error {
+func (stream *ObjectStream) writeHeader(w io.Writer) error {
 	stream.mutex.Lock()
 	defer stream.mutex.Unlock()
 	if stream.header == nil {
@@ -152,7 +159,7 @@ func (stream *ObjectStream) WriteHeader(w io.Writer) error {
 	return err
 }
 
-func (stream *ObjectStream) WriteFooter(w io.Writer) error {
+func (stream *ObjectStream) writeFooter(w io.Writer) error {
 	stream.mutex.Lock()
 	defer stream.mutex.Unlock()
 	if !stream.closed {
@@ -186,8 +193,8 @@ func (stream *ObjectStream) WriteFooter(w io.Writer) error {
 	return err
 }
 
-func (stream *ObjectStream) Stream(w io.Writer) error {
-	err := stream.WriteHeader(w)
+func (stream *ObjectStream) stream(w io.Writer) error {
+	err := stream.writeHeader(w)
 	if err != nil {
 		return err
 	}
@@ -214,5 +221,5 @@ func (stream *ObjectStream) Stream(w io.Writer) error {
 			return err
 		}
 	}
-	return stream.WriteFooter(w)
+	return stream.writeFooter(w)
 }
