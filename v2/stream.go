@@ -23,6 +23,10 @@ var (
 	closeBracket = []byte{']'}
 )
 
+type Streamer interface {
+	Stream(w io.Writer) error
+}
+
 type ObjectStream struct {
 	key string
 	objects chan interface{}
@@ -193,7 +197,7 @@ func (stream *ObjectStream) writeFooter(w io.Writer) error {
 	return err
 }
 
-func (stream *ObjectStream) stream(w io.Writer) error {
+func (stream *ObjectStream) Stream(w io.Writer) error {
 	err := stream.writeHeader(w)
 	if err != nil {
 		return err
@@ -212,13 +216,21 @@ func (stream *ObjectStream) stream(w io.Writer) error {
 				return err
 			}
 		}
-		data, err := json.Marshal(obj)
-		if err != nil {
-			return err
-		}
-		_, err = w.Write(data)
-		if err != nil {
-			return err
+		substream, ok := obj.(Streamer)
+		if ok {
+			err = substream.Stream(w)
+			if err != nil {
+				return err
+			}
+		} else {
+			data, err := json.Marshal(obj)
+			if err != nil {
+				return err
+			}
+			_, err = w.Write(data)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return stream.writeFooter(w)
