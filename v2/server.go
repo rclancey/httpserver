@@ -156,7 +156,7 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	handler, params := srv.router.Lookup(r.Method, parts)
 	mw := NewMetricsWriter(w)
-	route := strings.Join(parts, "/")
+	route := "/" + strings.Join(parts, "/")
 	if handler != nil {
 		route = params["route"]
 		ctx := context.WithValue(r.Context(), reqCtxKey("vars"), params)

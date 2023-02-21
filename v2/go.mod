@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/oleiade/reflections v1.0.1 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.14.0 // indirect
+	github.com/prometheus/client_golang v1.14.0
 	github.com/rclancey/argparse v1.0.1
 	github.com/rclancey/authenticator v0.0.2
 	github.com/rclancey/logging v1.0.1
