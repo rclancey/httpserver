@@ -80,14 +80,20 @@ type prefixRouter struct {
 	paramRoutes map[string]Router
 	handlers map[string]http.Handler
 	compiled map[string]http.Handler
+	base string
 }
 
 func NewRouter() Router {
+	return NewPrefixRouter("/")
+}
+
+func NewPrefixRouter(pth string) Router {
 	return &prefixRouter{
 		middlewares: []Middleware{},
 		staticRoutes: map[string]Router{},
 		paramRoutes: map[string]Router{},
 		handlers: map[string]http.Handler{},
+		base: pth,
 	}
 }
 
@@ -175,7 +181,9 @@ func (pr *prefixRouter) Lookup(method string, path []string) (http.Handler, map[
 	}
 	h, ok := pr.compiled[method]
 	if ok {
-		params := map[string]string{}
+		params := map[string]string{
+			"route": pr.base,
+		}
 		if len(path) > 0 {
 			params["filepath"] = strings.Join(path, "/")
 		}
@@ -218,13 +226,13 @@ func (pr *prefixRouter) Prefix(pth string) Router {
 	if strings.HasPrefix(me, ":") {
 		sub, ok = pr.paramRoutes[me[1:]]
 		if !ok {
-			sub = NewRouter()
+			sub = NewPrefixRouter(path.Join(pr.base, me))
 			pr.paramRoutes[me[1:]] = sub
 		}
 	} else {
 		sub, ok = pr.staticRoutes[me]
 		if !ok {
-			sub = NewRouter()
+			sub = NewPrefixRouter(path.Join(pr.base, me))
 			pr.staticRoutes[me] = sub
 		}
 	}

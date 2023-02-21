@@ -48,6 +48,7 @@ func NewServer(cfg *ServerConfig) (*Server, error) {
 	srv.Use(srv.AccessLoggerMiddleware())
 	srv.Use(srv.ContextMiddleware())
 	srv.Use(CompressMiddleware)
+	metricsSingleton.AttachEndpoint(router)
 
 	return srv, nil
 }
@@ -154,15 +155,19 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		parts = strings.Split(strings.TrimPrefix(path.Clean(r.URL.Path), "/"), "/")
 	}
 	handler, params := srv.router.Lookup(r.Method, parts)
+	mw := NewMetricsWriter(w)
+	route := "/" + strings.Join(parts, "/")
 	if handler != nil {
+		route = params["route"]
 		ctx := context.WithValue(r.Context(), reqCtxKey("vars"), params)
 		r = r.Clone(ctx)
-		handler.ServeHTTP(w, r)
+		handler.ServeHTTP(mw, r)
 	} else if r.Method == http.MethodGet {
-		srv.docroot.ServeHTTP(w, r)
+		srv.docroot.ServeHTTP(mw, r)
 	} else {
-		w.WriteHeader(http.StatusNotFound)
+		mw.WriteHeader(http.StatusNotFound)
 	}
+	mw.Measure(route)
 }
 
 func (srv *Server) ListenAndServe() error {

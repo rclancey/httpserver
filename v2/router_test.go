@@ -118,13 +118,13 @@ func (s *RouteSuite) TestLookup(c *C) {
 	r.Compile([]Middleware{})
 	exp := []*test{
 		&test{http.MethodGet, "/foo/john", false, nil, ""},
-		&test{http.MethodGet, "/foo/john/bar", true, map[string]string{"get": "john"}, "lennon 0"},
-		&test{http.MethodPost, "/foo/baz/paul", true, map[string]string{"post": "paul"}, "mccartney 0"},
-		&test{http.MethodPut, "/foo/george", true, map[string]string{"put": "george"}, "harrison 0"},
-		&test{http.MethodPut, "/foo/george/washington", true, map[string]string{"put": "george", "filepath": "washington"}, "harrison 0"},
-		&test{http.MethodPatch, "/foo/ringo/beatles", true, map[string]string{"patch": "ringo", "filepath": "beatles"}, "starr 0"},
-		&test{http.MethodPatch, "/foo/ringo", true, map[string]string{"patch": "ringo"}, "starr 0"},
-		&test{http.MethodDelete, "/foo/mick", true, map[string]string{"delete": "mick"}, "jagger 0"},
+		&test{http.MethodGet, "/foo/john/bar", true, map[string]string{"get": "john", "route": "/foo/:get/bar"}, "lennon 0"},
+		&test{http.MethodPost, "/foo/baz/paul", true, map[string]string{"post": "paul", "route": "/foo/baz/:post"}, "mccartney 0"},
+		&test{http.MethodPut, "/foo/george", true, map[string]string{"put": "george", "route": "/foo/:put"}, "harrison 0"},
+		&test{http.MethodPut, "/foo/george/washington", true, map[string]string{"put": "george", "filepath": "washington", "route": "/foo/:put"}, "harrison 0"},
+		&test{http.MethodPatch, "/foo/ringo/beatles", true, map[string]string{"patch": "ringo", "filepath": "beatles", "route": "/foo/:patch"}, "starr 0"},
+		&test{http.MethodPatch, "/foo/ringo", true, map[string]string{"patch": "ringo", "route": "/foo/:patch"}, "starr 0"},
+		&test{http.MethodDelete, "/foo/mick", true, map[string]string{"delete": "mick", "route": "/foo/:delete"}, "jagger 0"},
 	}
 	for i, t := range exp {
 		c.Log("lookup test", i)
