@@ -1,6 +1,9 @@
 package httpserver
 
 import (
+	"bufio"
+	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 	"sync"
@@ -34,6 +37,14 @@ func NewMetricsWriter(w http.ResponseWriter) *MetricsWriter {
 	}
 }
 
+func (mw *MetricsWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hw, ok := mw.w.(http.Hijacker)
+	if ok {
+		return hw.Hijack()
+	}
+	return nil, nil, fmt.Errorf("underlying ResponseWriter %T doesn't support hijacking", mw.w)
+}
+
 func (mw *MetricsWriter) Header() http.Header {
 	return mw.w.Header()
 }
@@ -61,8 +72,10 @@ func (mw *MetricsWriter) Measure(route string) {
 	}
 	m.Count("http_request_count", labels)
 	m.Summarize("http_response_size", labels, float64(mw.bytesWritten))
-	m.Summarize("http_response_first_write", labels, mw.firstWriteTime.Sub(mw.startTime).Seconds())
-	m.Summarize("http_response_time", labels, mw.lastWriteTime.Sub(mw.startTime).Seconds())
+	if !mw.lastWriteTime.IsZero() {
+		m.Summarize("http_response_first_write", labels, mw.firstWriteTime.Sub(mw.startTime).Seconds())
+		m.Summarize("http_response_time", labels, mw.lastWriteTime.Sub(mw.startTime).Seconds())
+	}
 }
 
 var metricsSingleton = &Metrics{
