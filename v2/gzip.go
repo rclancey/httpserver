@@ -202,7 +202,7 @@ func (w *CompressResponseWriter) Flush() error {
 func (w *CompressResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	hj, ok := w.w.(http.Hijacker)
 	if !ok {
-		return nil, nil, errors.New("websaerver doesn't support hijacking")
+		return nil, nil, errors.Errorf("compressor child response writer (%T) doesn't support hijacking", w.w)
 	}
 	return hj.Hijack()
 }
